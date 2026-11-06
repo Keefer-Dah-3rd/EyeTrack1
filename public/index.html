@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eye Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- 1. Camera setup -->
+  <main id="setup" class="screen screen-center">
+    <div class="card setup-card">
+      <div>
+        <h1>Eye tracker</h1>
+        <p class="lede">Records a test session on any page: which areas people look at and what they read using your webcam, plus exact mouse, clicks and scrolling.</p>
+        <ul class="tips">
+          <li>Sit about an arm's length from the screen, with light in front of you rather than behind.</li>
+          <li>Keep your head still from calibration onward. Leaning against a headrest or resting your elbows helps.</li>
+          <li>Set the browser window to the size you'll test at. Moving or resizing it later means recalibrating.</li>
+          <li>Video is processed in this browser and is never uploaded.</li>
+        </ul>
+        <label class="setup-toggle">
+          <input type="checkbox" id="setup-heatmap" checked>
+          <span>Capture screens for heat maps. Your browser will ask to share this tab.</span>
+        </label>
+        <p id="setup-capture-note" class="notice" role="alert" hidden></p>
+        <label id="camera-choice" class="camera-choice" hidden>
+          Camera
+          <select id="camera-select"></select>
+        </label>
+        <ul id="checks" class="checks" hidden>
+          <li id="check-face" class="check is-pending">Looking for your face</li>
+          <li id="check-centred" class="check is-pending">Eyes inside the box</li>
+          <li id="check-distance" class="check is-pending">About arm's length away</li>
+          <li id="check-light" class="check is-pending">Enough light on your eyes</li>
+          <li id="check-speed" class="check is-pending">Checking tracking speed</li>
+        </ul>
+        <p id="setup-status" class="status" role="status">The camera stays off until you start it.</p>
+        <div class="actions">
+          <button id="start-camera" class="primary">Start camera</button>
+          <button id="continue" class="primary" hidden disabled>Continue to calibration</button>
+          <button id="fullscreen">Full screen</button>
+          <button id="open-sessions-setup">Saved sessions</button>
+          <button type="button" onclick="window.open('/results.html', 'test-results')">Test results</button>
+        </div>
+      </div>
+      <div id="camera-slot" class="camera-slot"><span>Camera preview</span></div>
+    </div>
+  </main>
+
+  <!-- 2. Calibration -->
+  <main id="calibrate" class="screen target-screen" hidden>
+    <div class="hint">
+      <div id="calibrate-pips" class="pips" aria-hidden="true"></div>
+      <strong id="calibrate-progress">Dot 1 of 17</strong>
+      <span id="calibrate-instructions"></span>
+    </div>
+    <button id="calibration-dot" class="dot" data-base="dot" aria-label="Calibration dot"></button>
+    <button id="cancel-calibration" class="corner-link">Cancel</button>
+  </main>
+
+  <!-- 3. Accuracy check -->
+  <main id="validate" class="screen target-screen" hidden>
+    <div class="hint">
+      <strong id="validate-progress">Accuracy check</strong>
+      <span id="validate-instructions">Keep your eyes on each dot until it moves. No clicking.</span>
+    </div>
+    <div id="validation-dot" class="dot" data-base="dot" hidden></div>
+    <button id="cancel-check" class="corner-link">Cancel</button>
+  </main>
+
+  <div id="dot-message" class="dot-message" role="status" hidden></div>
+
+  <!-- Quick re-center, shown over the recorder -->
+  <div id="recenter-screen" class="target-screen recenter-screen" hidden>
+    <div class="hint">
+      <strong>Re-center</strong>
+      <span id="recenter-hint"></span>
+    </div>
+    <button id="recenter-dot" class="dot" data-base="dot" aria-label="Re-center dot"></button>
+    <button id="recenter-cancel" class="corner-link">Cancel</button>
+  </div>
+
+  <!-- Stays rendered but out of sight when off, because some browsers stop a hidden video. -->
+  <div id="camera-view" class="camera-view is-off" aria-hidden="true">
+    <video id="camera-video" muted playsinline></video>
+    <canvas id="camera-overlay"></canvas>
+    <div id="camera-box" class="camera-box"></div>
+    <span class="camera-caption">Keep your eyes in the box</span>
+  </div>
+
+  <!-- 4. Accuracy results -->
+  <main id="results" class="screen screen-center" hidden>
+    <div class="card results-card">
+      <p class="eyebrow">The right area of the screen was found for</p>
+      <p id="results-error" class="big-number">–</p>
+      <p id="results-verdict" class="verdict"></p>
+      <p id="results-detail" class="detail"></p>
+      <svg id="results-map" class="results-map" aria-hidden="true"></svg>
+      <p class="legend">
+        <span class="legend-target"></span> Dot you looked at
+        <span class="legend-gaze"></span> Where gaze was measured
+      </p>
+      <div class="actions">
+        <button id="start-live" class="primary">Continue to recorder</button>
+        <button id="recalibrate-results">Recalibrate</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 5. Recorder -->
+  <div id="live" class="screen live" hidden>
+    <div id="stage" class="stage">
+      <iframe id="site-frame" title="Site being tested" sandbox="allow-same-origin allow-scripts allow-forms allow-modals"></iframe>
+    </div>
+
+
+    <aside id="recorder-bar" class="dock" aria-label="Recorder">
+      <div class="dock-main">
+        <div class="timer">
+          <span class="rec-dot" aria-hidden="true"></span>
+          <span id="timer" role="timer">00:00.0</span>
+        </div>
+        <span id="tracking-state" class="chip">Waiting</span>
+        <button id="dock-toggle" class="dock-chevron" aria-controls="dock-body" aria-expanded="true" aria-label="Collapse recorder" title="Collapse or expand (H)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+        </button>
+        <div class="dock-buttons">
+          <button id="record-start">Start <kbd>⌥S</kbd></button>
+          <button id="record-stop" disabled>Stop <kbd>⌥D</kbd></button>
+          <button id="recenter" title="Fixes drift in a couple of seconds, without calibrating again">Re-center <kbd>⌥R</kbd></button>
+        </div>
+        <span id="bar-note" class="bar-note" role="status"></span>
+      </div>
+
+      <div id="dock-body" class="dock-body">
+        <label class="switch">
+          Heat map
+          <input type="checkbox" id="toggle-heatmap" role="switch">
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+
+        <form id="site-form">
+          <label for="site-url" class="dock-label">Site to test</label>
+          <div class="site-form">
+            <input id="site-url" type="text" spellcheck="false" autocomplete="off">
+            <button id="site-go" type="submit">Go</button>
+          </div>
+        </form>
+
+        <section class="live-score" aria-label="Page score">
+          <h3 class="dock-label">Page score <span id="live-score-page" class="live-score-page"></span></h3>
+          <div id="live-score-grid" class="live-score-grid"></div>
+          <p id="live-score-note" class="panel-meta"></p>
+          <details id="live-score-details" class="live-score-details">
+            <summary>What makes up these scores</summary>
+            <div id="live-score-measures"></div>
+            <p class="panel-meta">Out of 100, higher is better, so a high Density score means a less crowded page. Most scales are this tool's own, so use them to compare pages. Compare at the same window size.</p>
+          </details>
+        </section>
+
+        <div id="panel" class="panel" hidden>
+          <p class="panel-meta"><span id="accuracy-note"></span> · <span id="rate">0</span> updates/s</p>
+          <p id="tracking-note" class="tracking-note" hidden></p>
+          <p id="site-note" class="panel-meta"></p>
+
+          <h3>Where they're looking</h3>
+          <div id="dwell"></div>
+
+          <h3>Show</h3>
+          <label><input type="checkbox" id="toggle-regions"> Region outlines</label>
+          <label><input type="checkbox" id="toggle-preview"> Camera preview</label>
+
+          <div class="panel-actions">
+            <button id="reset-data">Clear data</button>
+            <button id="recalibrate-live">Recalibrate</button>
+            <button id="stop-camera">Stop camera</button>
+          </div>
+          <p class="panel-meta">Press H to collapse or expand the recorder. It collapses while recording so it doesn't draw the eye.</p>
+        </div>
+
+        <div class="dock-links">
+          <button id="open-sessions">Saved sessions</button>
+          <button id="toggle-panel" aria-expanded="false" aria-controls="panel">Details</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 6. Review after stopping -->
+  <main id="review" class="screen page" hidden>
+    <div class="page-column">
+      <div class="review-head">
+        <div>
+          <p class="eyebrow">Session finished</p>
+          <p id="review-duration" class="big-number">00:00.0</p>
+          <p id="review-facts" class="detail"></p>
+        </div>
+      </div>
+      <p id="review-warning" class="notice" role="alert" hidden></p>
+
+      <form id="review-form" class="card review-form">
+        <label for="session-name">Name</label>
+        <input id="session-name" type="text" maxlength="200" required>
+        <label for="session-notes">Notes</label>
+        <textarea id="session-notes" rows="2"></textarea>
+        <p id="review-error" class="notice is-bad" role="alert" hidden></p>
+        <div class="actions">
+          <button id="save-session" type="submit" class="primary">Save to database</button>
+          <button id="retry-session" type="button">Retry</button>
+          <button id="discard-session" type="button">Discard</button>
+        </div>
+      </form>
+
+      <div id="review-saved" class="card review-form" hidden>
+        <p class="verdict is-good">Saved to the database</p>
+        <div class="actions">
+          <button id="record-another" class="primary">Record another</button>
+          <button id="saved-to-sessions">Saved sessions</button>
+          <button type="button" onclick="window.open('/results.html', 'test-results')">Test results</button>
+        </div>
+      </div>
+
+      <section id="review-heat-section" hidden>
+        <h2>Heat maps</h2>
+        <p id="review-heat-status" class="detail"></p>
+        <div id="review-gallery" class="heat-gallery"></div>
+      </section>
+
+      <section id="review-regions-section" hidden>
+        <h2>Where they looked</h2>
+        <p id="review-regions-note" class="detail"></p>
+        <div id="review-regions"></div>
+      </section>
+
+      <section>
+        <h2>What they read</h2>
+        <p class="detail">Reading is estimated from eye movement, and neighbouring text can get mixed up. Short text can only show as looked near. On-screen time is exact.</p>
+        <div id="review-text" class="interactions"></div>
+      </section>
+
+      <section>
+        <h2>Mouse, clicks and scrolling</h2>
+        <div id="review-interactions" class="interactions"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 7. Saved sessions -->
+  <main id="sessions" class="screen page" hidden>
+    <div class="page-column">
+      <div class="review-head">
+        <h1>Saved sessions</h1>
+        <div class="actions">
+          <button type="button" onclick="window.open('/results.html', 'test-results')">Test results</button>
+          <button id="close-sessions">Back</button>
+        </div>
+      </div>
+      <p id="sessions-empty" class="detail" hidden></p>
+      <div id="sessions-list"></div>
+    </div>
+  </main>
+
+  <div id="drift-banner" class="drift-banner" role="alert" hidden>
+    The window moved or changed size, so gaze positions are no longer reliable.
+    <button id="recalibrate-drift">Recalibrate</button>
+  </div>
+
+  <script src="vendor/realeye-light.js"></script>
+  <script src="gaze-model.js"></script>
+  <script src="heatmap.js"></script>
+  <script src="page-scan.js"></script>
+  <script src="scorecard.js"></script>
+  <script src="live-score.js"></script>
+  <script src="screens.js"></script>
+  <script src="recorder.js"></script>
+  <script src="reading.js"></script>
+  <script src="interactions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

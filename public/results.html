@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Results</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="results.css">
+</head>
+<body>
+  <main class="page">
+    <div class="r-column">
+      <header class="r-head">
+        <button id="go-back" class="r-back">&larr; Back</button>
+        <button id="download-html" hidden>Download as HTML</button>
+      </header>
+
+      <div>
+        <h1>Test results</h1>
+        <p id="r-summary" class="r-lede" role="status">Loading saved sessions...</p>
+      </div>
+
+      <p id="demo-banner" class="r-banner" hidden>Demo data. These sessions are generated to preview this page and are not real test results.</p>
+
+      <div id="filters" class="r-filters" hidden>
+        <label id="site-filter-label">Website
+          <select id="site-filter"></select>
+        </label>
+        <label>Showing
+          <select id="session-filter"></select>
+        </label>
+      </div>
+
+      <div id="dashboard" class="r-dashboard" hidden>
+        <section id="tiles" class="r-tiles" aria-label="Summary"></section>
+        <p id="selection-note" class="r-note" hidden></p>
+
+        <section class="card r-card">
+          <h2>Page scorecard</h2>
+          <p class="r-note">Scores out of 100, and higher is better in every column, so a high Density score means a less crowded page. They're for comparing pages with each other. Open a page to see what each score is made of.</p>
+          <div id="scorecard"></div>
+          <details class="r-method">
+            <summary>How the scores are worked out</summary>
+            <ul>
+              <li><strong>What gets measured.</strong> Hierarchy, Readability and two of the Density measures read the page's own styles, so they only work for pages on the same address as this tool. The other two Density measures read the captured screen, so they need the heat map option on. Gaze focus comes from the sessions selected above and needs at least <span id="focus-minimum"></span> seconds of gaze on the page.</li>
+              <li><strong>Keep the window the same size.</strong> Words per screenful and line length change with the window, so only compare pages recorded at the same size.</li>
+              <li><strong>Where the targets come from.</strong> Contrast, line length and line spacing use WCAG accessibility targets. Every other scale is this tool's own, set by measuring eight public websites on 31 October 2026. They are not industry norms and haven't been tested against real task success.</li>
+              <li><strong>What the scores can't tell you.</strong> They don't know what you meant to be most important, so a clear hierarchy can still point at the wrong thing. Text inside images isn't counted, and text over an image is left out of the contrast check. High density can be right for expert tools.</li>
+              <li><strong>Gaze focus.</strong> It shows how much gaze gathered in a few places, not whether those were the right places. A task that sends people around the page will lower it.</li>
+              <li><strong>Pages that changed.</strong> Layout scores use the newest session that visited a page. To see an older version of a page, pick that session above.</li>
+            </ul>
+          </details>
+        </section>
+
+        <section class="card r-card">
+          <h2>Where attention went</h2>
+          <p class="r-note">Share of tracked gaze time. With several sessions, each one counts equally.</p>
+          <div id="attention"></div>
+        </section>
+
+        <section class="card r-card">
+          <h2>Region by session</h2>
+          <p class="r-note">The same shares for each session, oldest first. A stronger colour means a larger share of that session's gaze.</p>
+          <div id="matrix" class="r-scroll"></div>
+        </section>
+
+        <section class="card r-card">
+          <h2>Heat maps</h2>
+          <p id="heat-note" class="r-note"></p>
+          <div id="heat-gallery" class="r-gallery"></div>
+        </section>
+
+        <section class="card r-card">
+          <h2>Tracking accuracy</h2>
+          <p class="r-note">Typical gaze error for every session on this website, oldest first. Lower is better. Select a dot to view that session.</p>
+          <div id="accuracy"></div>
+        </section>
+
+        <section class="card r-card">
+          <h2>All sessions</h2>
+          <p class="r-note">A session counts as reliable when its error is <span id="usable-limit"></span> px or less and the face was tracked at least <span id="face-limit"></span>% of the time.</p>
+          <div id="session-table" class="r-scroll"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="tooltip" class="r-tooltip" role="tooltip" hidden></div>
+
+  <script src="scorecard.js"></script>
+  <script src="results.js"></script>
+</body>
+</html>

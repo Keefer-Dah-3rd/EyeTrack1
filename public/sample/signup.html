@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tideline sign up</title>
+  <link rel="stylesheet" href="sample.css">
+</head>
+<body>
+  <header class="site-nav" data-aoi="Navigation">
+    <a class="site-logo" href="index.html">Tideline</a>
+    <nav><a href="index.html">Features</a> <a href="pricing.html">Pricing</a></nav>
+    <a class="site-button site-button-small" href="signup.html">Sign up</a>
+  </header>
+
+  <section class="site-signup">
+    <div data-aoi="Sign up intro">
+      <h2>Start your 14 days.</h2>
+      <p>No card required. Bring your notes with you, or start with a clean page.</p>
+    </div>
+    <form data-aoi="Sign up form" onsubmit="event.preventDefault(); location.href = 'index.html';">
+      <label>Name <input type="text" autocomplete="off"></label>
+      <label>Email <input type="email" autocomplete="off"></label>
+      <button class="site-button" type="submit">Create account</button>
+    </form>
+  </section>
+
+  <footer class="site-footer" data-aoi="Footer">
+    <p>Tideline is a sample site for testing the eye tracker.</p>
+  </footer>
+</body>
+</html>
